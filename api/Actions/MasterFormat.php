@@ -30,6 +30,7 @@ class MasterFormat
         // add headers
         $headers = array(
             "student",
+            "code",
             "patient",
             "trial",
             "elapsed time",
@@ -52,6 +53,7 @@ class MasterFormatLine
 {
     public function setCommon(
         $student,
+        $code,
         $patient,
         $trial,
         $elapsedTime,
@@ -59,6 +61,7 @@ class MasterFormatLine
         $trialCorrect
     ) {
         $this->student       = $student;
+        $this->code       = $code;
         $this->patient       = $patient;
         $this->trial         = $trial;
         $this->elapsed_time  = $elapsedTime;

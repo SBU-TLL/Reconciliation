@@ -52,7 +52,7 @@ export class InterfaceController {
      */
     populate_med_grid(patient_id, num) {
         let med = this.state['patients'][patient_id].medications[num];
-        med["Modify 0 display"] = "Modify Prescription";
+        med["Modify 0 display"] = "Prescribe";
 
         let select = $("select[name='med_modify_" + num + "']");
 
@@ -178,7 +178,7 @@ export class InterfaceController {
                 <div id="frequency" class="col">Frequency</div>
                 <div id="stop" class="col">Stop</div>
                 <div id="continue" class="col">Continue</div>
-                <div id="modify" class="col">Modify</div>
+                <div id="modify" class="col">Prescribe</div>
             </div>
         `);
     }
@@ -245,6 +245,16 @@ export class InterfaceController {
             <br />
             <p>${this.state.intro}</p>
         `);
+    }
+    show_codeName(){
+        $.getJSON('api/public/codeName').then(
+            (result)=>{
+        console.log(result)
+                $('#codeName').html(`Your code is ${result.data}`)
+            }
+                
+                );
+
     }
 
     check_permissions() {

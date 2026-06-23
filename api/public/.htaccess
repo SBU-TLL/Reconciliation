@@ -9,10 +9,12 @@ RewriteEngine On
 RewriteCond %{REQUEST_FILENAME} !-f
 RewriteRule ^ index.php [QSA,L]
 
-# Guarded so Apache does not 500 where mod_shib is absent (e.g. local DDEV).
-<IfModule mod_shib>
-    AuthType shibboleth
-    ShibRequestSetting requireSession 1
-    require valid-user
-    # require affiliation student@stonybrook.edu
-</IfModule>
+# AuthType shibboleth
+# ShibRequestSetting requireSession 1
+# require valid-user
+# # require affiliation student@stonybrook.edu
+# <If "!%{REQUEST_URI} =~ m#generate_master_doc#">
+# AuthType shibboleth
+# ShibRequestSetting requireSession 1
+# require valid-user
+# </If>

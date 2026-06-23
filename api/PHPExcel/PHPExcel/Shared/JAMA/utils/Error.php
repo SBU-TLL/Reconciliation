@@ -62,22 +62,3 @@ $error['EN'][ARRAY_LENGTH_EXCEPTION] = "Array length must be a multiple of m.";
 
 define('ROW_LENGTH_EXCEPTION', -10);
 $error['EN'][ROW_LENGTH_EXCEPTION] = "All rows must have the same length.";
-
-/**
- *    Custom error handler
- *    @param int $num Error number
- */
-function JAMAError($errorNumber = null)
-{
-    global $error;
-
-    if (isset($errorNumber)) {
-        if (isset($error[JAMALANG][$errorNumber])) {
-            return $error[JAMALANG][$errorNumber];
-        } else {
-            return $error['EN'][$errorNumber];
-        }
-    } else {
-        return ("Invalid argument to JAMAError()");
-    }
-}

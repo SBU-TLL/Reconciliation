@@ -4,10 +4,12 @@ class Student
 {
     public function __construct($logger, $studentsPath, $patientsPath, $studentEppn)
     {
+        $utils= new Utils;
         $this->logger       = $logger;
         $this->studentsPath = $studentsPath;
         $this->patientsPath = $patientsPath;
         $this->studentEppn  = $studentEppn;
+        $this->codeName =$utils->codeName($studentEppn);
     }
 
     /**

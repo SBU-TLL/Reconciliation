@@ -4,14 +4,9 @@
 header("Access-Control-Allow-Origin: *");
 
 // NOTE: remove in prod.
-ini_set("display_errors", 1);
-ini_set("display_startup_errors", 1);
-// This legacy stack predates PHP 7.2: Slim 2 calls the 7.4-deprecated
-// get_magic_quotes_gpc(); the code calls count() on non-arrays (a 7.2+ warning);
-// PHPExcel uses each(). Slim's error handler turns ANY reported error into a fatal
-// ErrorException, so exclude deprecations/notices/strict/warnings — this restores the
-// pre-7.2 runtime behavior the code was written for (e.g. count(null) === 0).
-error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_STRICT & ~E_WARNING);
+//ini_set("display_errors", 0);
+//ini_set("display_startup_errors", 1);
+//error_reporting(E_ALL);
 
 // Necessary b/c of server PHP config
 date_default_timezone_set("America/New_York");
@@ -19,8 +14,12 @@ date_default_timezone_set("America/New_York");
 require "../vendor/autoload.php";
 require "../Common/Parameters.php";
 require "../Common/APIResponse.php";
-
+require "../Common/Utils.php";
+use Psr\Http\Message\ServerRequestInterface;
+	use PhpOffice\PhpSpreadsheet\Spreadsheet;
+	use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 // Create the Object Variables
+$utils= new Utils;
 $parameters  = new Parameters;
 $responseFmt = new APIResponse;
 
@@ -36,40 +35,70 @@ $PATH_EXCLDATA_PATIENTS     = "../../data/excel_dumps/patients/";
 // Provides a bit of code-space away from Shibboleth,
 // so that we can use other auth types in the future...
 // Relocates hard coded $_SERVER[...] vars in the code below to up top here.
+$authUniqueId  ="pstdenis@stonybrook.edu";
+$authFirstName =  "Paul"; 
+$authLastName  ="St. Denis";
+if(key_exists("eppn",$_SERVER))
+{
 $authUniqueId  = $_SERVER["eppn"];
-$authFirstName = $_SERVER["nickname"];
+$authFirstName = $_SERVER["nickname"]; 
 $authLastName  = $_SERVER["sn"];
-
+}
 // The admins of the server, temporarily hardcoded
 $authAdmins = array(
-    "ikleiman@stonybrook.edu",
+    "racwong@stonybrook.edu",
+    "bhdesai@stonybrook.edu",
     "vlgarcia@stonybrook.edu",
     "chaotsai@stonybrook.edu",
     "pstdenis@stonybrook.edu",
+    "vlingam@stonybrook.edu"
+
+
 );
 
 /**
  * Prepare App
  */
-$app = new \Slim\Slim(array(
-    "templates.path" => "../templates",
-));
+$configuration = [
+    'settings' => [
+        'displayErrorDetails' => true,
+    ],
+];
+$c = new \Slim\Container($configuration);
+$app = new \Slim\App($c);
 
 /**
  * Create monolog logger and store logger in container as singleton
  * (Singleton resources retrieve the same log resource definition each time)
  * See Log Levels: https://github.com/Seldaek/monolog/blob/master/doc/01-usage.md
  */
-$app->container->singleton("log", function () {
+$container = $app->getContainer();
+$container["log"]= function () {
     $log = new \Monolog\Logger("Reconciliation");
-    $log->pushHandler(new \Monolog\Handler\StreamHandler("../logs/app.log", \Monolog\Logger::DEBUG));
-    return $log;
-});
+    $log->pushHandler(new \Monolog\Handler\StreamHandler("../../data/logs/app.log", \Monolog\Logger::DEBUG));
+    return new \Monolog\Logger("Reconciliation");
+};
 
 /**
  * Prepare view
  */
-$app->view(new \Slim\Views\Twig());
+
+$container['view'] = function ($container) {
+    $view = new \Slim\Views\Twig('../templates', [
+        'cache' => realpath("../templates/cache")
+    ]);
+
+    // Instantiate and add Slim specific extension
+    $router = $container->get('router');
+    $uri = \Slim\Http\Uri::createFromEnvironment(new \Slim\Http\Environment($_SERVER));
+    $view->addExtension(new \Slim\Views\TwigExtension($router, $uri));
+
+    return $view;
+};
+
+/*
+$container['view'] = function ($container) {
+//$app->view(new \Slim\Views\Twig());
 $app->view->parserOptions = array(
     "charset"          => "utf-8",
     "cache"            => realpath("../templates/cache"),
@@ -79,11 +108,12 @@ $app->view->parserOptions = array(
 );
 $app->view->parserExtensions = array(new \Slim\Views\TwigExtension());
 
+*/
 /**
  * Basic index route called
  */
 $app->get("/", function () use ($app) {
-    $app->log->info("Reconciliation '/' route called");
+    $app->getContainer('log')->info("Reconciliation '/' route called");
     $app->render("index.html");
 });
 
@@ -92,7 +122,7 @@ $app->get("/", function () use ($app) {
  */
 $app->get("/student_init", function () use ($app, $PATH_STUDENTS, $PATH_PATIENTS, $responseFmt, $authUniqueId, $authFirstName, $authLastName, $authAdmins) {
     require "../Actions/Student.php";
-    $users = new Student($app->log, $PATH_STUDENTS, $PATH_PATIENTS, $authUniqueId);
+    $users = new Student($app->getContainer('log'), $PATH_STUDENTS, $PATH_PATIENTS, $authUniqueId);
 
     echo $responseFmt->arrayToAPIObject(
         $users->studentFullInit(
@@ -103,12 +133,23 @@ $app->get("/student_init", function () use ($app, $PATH_STUDENTS, $PATH_PATIENTS
     );
 });
 
+
+$app->get("/codeName", function () use ($app, $PATH_STUDENTS, $PATH_PATIENTS, $responseFmt, $authUniqueId, $authFirstName, $authLastName, $authAdmins) {
+    require "../Actions/Student.php";
+    $users = new Student($app->getContainer('log'), $PATH_STUDENTS, $PATH_PATIENTS, $authUniqueId);
+
+    echo $responseFmt->arrayToAPIObject( array(
+        "status" => "ok",
+        "data"   => $users->codeName,
+    )
+    );
+});
 /**
  * Get the trial numbers for each patient this student submitted answers for
  */
 $app->get("/submitted_trials_data", function () use ($app, $PATH_STUDENTS, $responseFmt, $authUniqueId) {
     require "../Actions/Trial.php";
-    $trial = new Trial($app->log, $PATH_STUDENTS, $authUniqueId);
+    $trial = new Trial($app->getContainer('log'), $PATH_STUDENTS, $authUniqueId);
 
     echo $responseFmt->arrayToAPIObject(
         $trial->getSubmittedTrialAmounts()
@@ -120,7 +161,7 @@ $app->get("/submitted_trials_data", function () use ($app, $PATH_STUDENTS, $resp
  */
 $app->get("/student_report", function () use ($app, $PATH_STUDENTS, $responseFmt, $authUniqueId) {
     require "../Actions/Trial.php";
-    $trial = new Trial($app->log, $PATH_STUDENTS, $authUniqueId);
+    $trial = new Trial($app->getContainer('log'), $PATH_STUDENTS, $authUniqueId);
 
     echo $responseFmt->arrayToAPIObject(
         $trial->getFullStudentReport()
@@ -131,16 +172,20 @@ $app->get("/student_report", function () use ($app, $PATH_STUDENTS, $responseFmt
  * TODO: Temporary~ endpoint to serve the patient data from this router
  * Get google spreadsheet data, $type is "main_intro" or "patients"
  */
-$app->get("/app_data/:type", function ($type) use ($app) {
-    $app->log->info("Using depreciated endpoint /all_patients_data");
-    $data = json_encode(json_decode(file_get_contents("../../json/data.json"))->{$type});
+
+
+
+$app->get("/app_data/{type}", function ($response,$request,$args) use ($app) {
+//print_r($args); 
+   //app->getContainer('log')->info("Using depreciated endpoint /all_patients_data");
+    $data = json_encode(json_decode(file_get_contents("../../json/data.json"))->{$args['type']});
     echo <<<EOL
-        {"status":"ok", "data":$data}
+       {"status":"ok", "data":$data}
 EOL;
 });
 
 $app->get("/all_patients_data", function () use ($app) {
-    $app->log->info("Using depreciated endpoint /all_patients_data");
+    $app->getContainer('log')->info("Using depreciated endpoint /all_patients_data");
     $data = json_encode(json_decode(file_get_contents("../../json/data.json"))->patients);
     echo <<<EOL
 	{"status":"ok", "data":$data}
@@ -150,14 +195,14 @@ EOL;
 /**
  * Submit a students attempt
  */
-$app->post("/submit_attempt", function () use ($app, $PATH_STUDENTS, $PATH_PATIENTS, $parameters, $responseFmt, $authUniqueId) {
-    $data = json_decode($app->request->getBody(), true);
+$app->post("/submit_attempt", function ($request) use ($app, $PATH_STUDENTS, $PATH_PATIENTS, $parameters, $responseFmt, $authUniqueId) {
+    $data = json_decode($request->getBody(), true);
     $parameters->paramCheck($data, array(
         "attempt", "patient",
     ));
 
     require "../Actions/Student.php";
-    $student = new Student($app->log, $PATH_STUDENTS, $PATH_PATIENTS, $authUniqueId);
+    $student = new Student($app->getContainer('log'), $PATH_STUDENTS, $PATH_PATIENTS, $authUniqueId);
 
     echo $responseFmt->arrayToAPIObject(
         $student->submitStudentAttempt(
@@ -171,13 +216,19 @@ $app->post("/submit_attempt", function () use ($app, $PATH_STUDENTS, $PATH_PATIE
 /**
  * Create the master document...
  */
-$app->get("/generate_master_doc", function () use ($app, $PATH_STUDENTS, $PATH_EXCLDATA, $parameters, $responseFmt, $authUniqueId, $authAdmins) {
+$app->get("/generate_master_doc", function (ServerRequestInterface $request) use ($app, $PATH_STUDENTS, $PATH_EXCLDATA, $parameters, $responseFmt, $authUniqueId, $authAdmins) {
+    generateMaster ($request,$app, $PATH_STUDENTS, $PATH_EXCLDATA, $parameters, $responseFmt, $authUniqueId, $authAdmins);
+});
+$app->get("/generate_master_doc_htpass", function (ServerRequestInterface $request) use ($app, $PATH_STUDENTS, $PATH_EXCLDATA, $parameters, $responseFmt, $authUniqueId, $authAdmins) {
+    generateMaster ($request,$app, $PATH_STUDENTS, $PATH_EXCLDATA, $parameters, $responseFmt, $authUniqueId, $authAdmins);
+});
+function generateMaster ($request,$app, $PATH_STUDENTS, $PATH_EXCLDATA, $parameters, $responseFmt, $authUniqueId, $authAdmins){
     if (!in_array($authUniqueId, $authAdmins)) {
         echo "invalid permissions";
         exit;
     }
 
-    $param = $app->request->get();
+    $param = $request->getQueryParams();
     $parameters->paramCheck($param, array(
         "download",
     ));
@@ -188,7 +239,7 @@ $app->get("/generate_master_doc", function () use ($app, $PATH_STUDENTS, $PATH_E
      */
 
     require "../Actions/Reporting.php";
-    $reporting = new Reporting($app->log, $PATH_STUDENTS, $authUniqueId);
+    $reporting = new Reporting($app->getContainer('log'), $PATH_STUDENTS, $authUniqueId);
 
     if ($param["download"] == "true") {
         $responseFmt->csvDownload(
@@ -202,8 +253,8 @@ $app->get("/generate_master_doc", function () use ($app, $PATH_STUDENTS, $PATH_E
             )
         );
     }
-});
 
+}
 /**
  * Reset My Student Data
  */
@@ -285,7 +336,7 @@ $app->get("/all_patient_report_xl", function () use ($app, $PATH_STUDENTS, $PATH
     }
 
     require "../Actions/Trial.php";
-    $trial = new Trial($app->log, $PATH_STUDENTS, $authUniqueId);
+    $trial = new Trial($app->getContainer('log'), $PATH_STUDENTS, $authUniqueId);
 
     $allPatients = $trial->getAllPatients($PATH_PATIENTS);
     if ($allPatients["status"] != "ok") {
@@ -295,7 +346,7 @@ $app->get("/all_patient_report_xl", function () use ($app, $PATH_STUDENTS, $PATH
 
     $savedDirs = array();
     foreach ($allPatients["data"] as $patient) {
-        $newTrial = new Trial($app->log, $PATH_STUDENTS, $patient);
+        $newTrial = new Trial($app->getContainer('log'), $PATH_STUDENTS, $patient);
 
         $fullData = $newTrial->getFullPatientReport($PATH_PATIENTS);
         if ($fullData["status"] != "ok") {
@@ -305,10 +356,9 @@ $app->get("/all_patient_report_xl", function () use ($app, $PATH_STUDENTS, $PATH
         $data = $fullData["data"];
 
         /** Include PHPExcel */
-        require_once dirname(__FILE__) . '/../PHPExcel/PHPExcel.php';
-
+        //:wrequire_once dirname(__FILE__) . '/../PHPExcel/PHPExcel.php';
         // Create new PHPExcel object
-        $objPHPExcel = new PHPExcel();
+        $objPHPExcel = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
 
         // Set document properties
         $objPHPExcel->getProperties()->setCreator("Reconciliation API")
@@ -340,7 +390,7 @@ $app->get("/all_patient_report_xl", function () use ($app, $PATH_STUDENTS, $PATH
 
         $saveTo = $PATH_EXCLDATA_PATIENTS . $patient . ".xlsx";
 
-        $objWriter = PHPExcel_IOFactory::createWriter($objPHPExcel, 'Excel2007');
+        $objWriter = \PhpOffice\PhpSpreadsheet\IOFactory::createWriter($objPHPExcel,  "Xlsx");
         $objWriter->save($saveTo);
 
         $savedDirs[] = $saveTo;
