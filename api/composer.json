@@ -1,0 +1,18 @@
+{
+    "name": "sbu-tll/reconciliation-api",
+    "description": "Reconciliation API (legacy Slim 2 stack). composer.json reconstructed so dependencies are reproducible for local dev and deployment; vendor/ is gitignored.",
+    "require": {
+        "php": ">=7.0 <8.0",
+        "slim/slim": "^2.6",
+        "slim/views": "^0.1.3",
+        "twig/twig": "^1.44",
+        "monolog/monolog": "^1.27"
+    },
+    "config": {
+        "policy": {
+            "advisories": {
+                "block": false
+            }
+        }
+    }
+}

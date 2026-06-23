@@ -1,4 +1,9 @@
-AuthType shibboleth
-ShibRequestSetting requireSession 1
-require valid-user
-# require affiliation student@stonybrook.edu
+# Guarded so Apache does not 500 where mod_shib is absent (e.g. local DDEV).
+# In production this dir is Shibboleth-protected (the frontend pings it to detect
+# login); locally it is served unprotected so the ping succeeds.
+<IfModule mod_shib>
+    AuthType shibboleth
+    ShibRequestSetting requireSession 1
+    require valid-user
+    # require affiliation student@stonybrook.edu
+</IfModule>

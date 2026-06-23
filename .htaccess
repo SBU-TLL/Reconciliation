@@ -1,12 +1,17 @@
 # Lazy Session Shibboleth Config on Apache
-AuthType shibboleth
-<IfVersion < 2.3>
-  ShibCompatWith24 On
-</IfVersion>
-ShibRequestSetting requireSession false 
-require shibboleth
-Options +SymLinksIfOwnerMatch 
-RewriteEngine on
-RewriteCond %{REMOTE_USER} ^$ 
-RewriteRule ^(.*)$ /checker/index\.php\?target=%{REQUEST_URI} [NC,QSA]
-
+# Shibboleth directives are guarded so Apache does not 500 where mod_shib is
+# absent (e.g. local DDEV). In production mod_shib is loaded, so this applies
+# exactly as before; locally the whole block is skipped and index.html is served.
+<IfModule mod_shib>
+    AuthType shibboleth
+    <IfVersion < 2.3>
+      ShibCompatWith24 On
+    </IfVersion>
+    ShibRequestSetting requireSession false
+    require shibboleth
+    # Send unauthenticated users (no REMOTE_USER) to the Shibboleth checker.
+    RewriteEngine on
+    RewriteCond %{REMOTE_USER} ^$
+    RewriteRule ^(.*)$ /checker/index\.php\?target=%{REQUEST_URI} [NC,QSA]
+</IfModule>
+Options +SymLinksIfOwnerMatch

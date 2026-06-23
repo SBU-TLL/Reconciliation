@@ -6,7 +6,12 @@ header("Access-Control-Allow-Origin: *");
 // NOTE: remove in prod.
 ini_set("display_errors", 1);
 ini_set("display_startup_errors", 1);
-error_reporting(E_ALL);
+// This legacy stack predates PHP 7.2: Slim 2 calls the 7.4-deprecated
+// get_magic_quotes_gpc(); the code calls count() on non-arrays (a 7.2+ warning);
+// PHPExcel uses each(). Slim's error handler turns ANY reported error into a fatal
+// ErrorException, so exclude deprecations/notices/strict/warnings — this restores the
+// pre-7.2 runtime behavior the code was written for (e.g. count(null) === 0).
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_NOTICE & ~E_STRICT & ~E_WARNING);
 
 // Necessary b/c of server PHP config
 date_default_timezone_set("America/New_York");
