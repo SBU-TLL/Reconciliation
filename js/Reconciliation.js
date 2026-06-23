@@ -132,6 +132,7 @@ async function init({
   let intro_data_text = await intro_data.main_intro_data();
   state.intro = intro_data_text[0].replace("\n", "<br/>");
   ui.show_welcome_message();
+  ui.show_codeName();
 
   /**
    * Set global event listeners

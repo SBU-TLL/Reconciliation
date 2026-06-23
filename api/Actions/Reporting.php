@@ -24,7 +24,7 @@ class Reporting
 
         require "MasterFormat.php";
         $master = new MasterFormat;
-
+        $utils= new Utils;
         foreach ($allStudents["data"] as $studentEppn) {
             $studentTrial  = new Trial($this->logger, $this->studentsPath, $studentEppn);
             $studentReport = $studentTrial->getFullStudentReport();
@@ -36,6 +36,7 @@ class Reporting
                 $line = new MasterFormatLine;
                 $line->setCommon(
                     $studentResponse->student_id,
+                    $utils->codeName($studentResponse->student_id),
                     $studentResponse->patient_id,
                     $studentResponse->trial_number,
                     $studentResponse->elapsed_time_sec,
@@ -50,9 +51,10 @@ class Reporting
 
                         $amt    = $medProperties->amt;
                         $action = $medProperties->action;
-
+			$studentActual=$studentResponse->actual_amt->$group;
+			$studentSubmit= $studentResponse->submit_amt->$group;
                         $groupCorrect = false;
-                        if ($studentResponse->actual_amt->$group == $studentResponse->submit_amt->$group) {
+                        if ($studentActual==$studentSubmit) {
                             $groupCorrect = true;
                         }
 

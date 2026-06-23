@@ -1,0 +1,10 @@
+{
+    "require": {
+        "slim/slim": "3.*",
+        "monolog/monolog": "^2.1",
+        "phpoffice/phpspreadsheet": "^1.15"
+    },
+    "require-dev": {
+        "rector/rector": "^0.8.56"
+    }
+}
