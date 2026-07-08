@@ -1,2 +1,6 @@
 ._*
 data/
+
+# PHP error logs are runtime artifacts and an information-disclosure risk in VCS
+*.log
+**/PHP_errors.log

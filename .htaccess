@@ -1,20 +1,24 @@
 # Lazy Session Shibboleth Config on Apache
+# The Shibboleth-dependent directives below are wrapped in <IfModule mod_shib> so Apache
+# does not 500 (and does not redirect-loop to /checker) where mod_shib is absent, e.g.
+# local DDEV. In production mod_shib is loaded, so this applies exactly as upstream intends.
+<IfModule mod_shib>
+    RewriteEngine on
+    RewriteCond %{REMOTE_USER} ^$ 
+    RewriteRule ^(.*)$ /checker/index\.php\?target=%{REQUEST_URI} [NC,QSA]
 
-RewriteEngine on
-RewriteCond %{REMOTE_USER} ^$ 
-RewriteRule ^(.*)$ /checker/index\.php\?target=%{REQUEST_URI} [NC,QSA]
-
-<If "%{REQUEST_URI} =~ /generate_master_doc_htpass/">
-#r3c0nc1l1@t10n
-# AuthType Basic
-# AuthName "Restricted Files"
-# AuthBasicProvider file
-# AuthName "Restricted Content"
-# AuthUserFile  /home/tltsecure/apache2/htdocs/reconciliation/.htpasswd 
-# Require valid-user
-</If>
-<Else>
-AuthType shibboleth
-ShibRequestSetting requireSession false 
-require shibboleth
-</Else>
+    <If "%{REQUEST_URI} =~ /generate_master_doc_htpass/">
+    #r3c0nc1l1@t10n
+    # AuthType Basic
+    # AuthName "Restricted Files"
+    # AuthBasicProvider file
+    # AuthName "Restricted Content"
+    # AuthUserFile  /home/tltsecure/apache2/htdocs/reconciliation/.htpasswd 
+    # Require valid-user
+    </If>
+    <Else>
+    AuthType shibboleth
+    ShibRequestSetting requireSession false 
+    require shibboleth
+    </Else>
+</IfModule>
