@@ -2,7 +2,10 @@ export class APIHandler {
     constructor() {
         console.log("APIHandler Module Loaded");
 
-        this.base_url = "https://" + window.location.hostname + "/reconciliation/api/public/";
+        // Production serves the app under "/reconciliation/"; local DDEV serves it at
+        // the docroot. Host-gate the path prefix so both work (inert in production).
+        const prefix = window.location.hostname.endsWith(".ddev.site") ? "" : "/reconciliation";
+        this.base_url = window.location.origin + prefix + "/api/public/";
     }
 
     parse_get_data(data) {
