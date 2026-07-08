@@ -1,0 +1,46 @@
+# Keep the production image clean and free of dev/VCS/dead material.
+
+# Version control & this build's own files
+.git
+.gitignore
+.dockerignore
+Dockerfile
+
+# Local DDEV development environment + dev-auth mock (never deployed)
+.ddev/
+
+# Local env / secrets — production uses runtime env vars, not files
+.env
+.env.*
+
+# Composer deps are rebuilt in the image's build stage
+api/vendor/
+vendor/
+
+# Dead bundled PHPExcel (replaced by Composer's phpoffice/phpspreadsheet)
+api/PHPExcel/
+
+# Runtime file storage — provided by a mounted volume, not baked
+data/
+
+# Dead alternate-config variants
+.htaccess_js_shib
+index_for_js_shib.html
+
+# Node / package tooling (if any)
+node_modules/
+
+# Logs & docs
+*.log
+**/*.log
+*.md
+README*
+
+# OS / editor junk (Finder metadata, AppleDouble resource forks, swap files)
+.DS_Store
+**/.DS_Store
+._*
+**/._*
+Thumbs.db
+*.swp
+*.swo
