@@ -1,0 +1,4 @@
+# Reset the parent (app root) rewrite rules for this directory — same as the
+# real internal "checker" app's own .htaccess does in production. Without this
+# the root rewrite (REMOTE_USER empty -> /checker/index.php) loops on itself.
+RewriteEngine on

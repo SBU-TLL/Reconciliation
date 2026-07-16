@@ -1,0 +1,20 @@
+# Lazy Session Shibboleth Config on Apache
+
+RewriteEngine on
+RewriteCond %{REMOTE_USER} ^$ 
+RewriteRule ^(.*)$ /checker/index\.php\?target=%{REQUEST_URI} [NC,QSA]
+
+<If "%{REQUEST_URI} =~ /generate_master_doc_htpass/">
+#r3c0nc1l1@t10n
+# AuthType Basic
+# AuthName "Restricted Files"
+# AuthBasicProvider file
+# AuthName "Restricted Content"
+# AuthUserFile  /home/tltsecure/apache2/htdocs/reconciliation/.htpasswd 
+# Require valid-user
+</If>
+<Else>
+AuthType shibboleth
+ShibRequestSetting requireSession false 
+require shibboleth
+</Else>

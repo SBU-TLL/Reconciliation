@@ -1,6 +1,8 @@
 name: reconciliation
 type: php
-docroot: ""
+# Public tree lives in www/ (repo convention); app code, data/, json/, api/
+# internals and .ddev stay outside the docroot and are not web-reachable.
+docroot: "www"
 php_version: "7.4"
 webserver_type: apache-fpm
 xdebug_enabled: false
@@ -11,6 +13,8 @@ database:
     version: "11.8"
 use_dns_when_possible: true
 composer_version: "2"
+# The Slim API's composer root is api/ (require "../vendor/autoload.php").
+composer_root: api
 web_environment: []
 corepack_enable: false
 

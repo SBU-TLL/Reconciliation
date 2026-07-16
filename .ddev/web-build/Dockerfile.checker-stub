@@ -1,0 +1,5 @@
+# DDEV-only (Reconciliation-specific): the app's root .htaccess rewrites
+# anonymous requests to /checker/index.php — the internal "checker" project,
+# which is a separate app served same-origin in production. Map it to a tiny
+# local stub that forwards to the real Shibboleth login.
+COPY checker-alias.conf /etc/apache2/conf-enabled/zzz-checker-stub.conf

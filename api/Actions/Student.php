@@ -27,7 +27,7 @@ class Student
         /**
          * Get which trial # this is
          */
-        require "../Actions/Trial.php";
+        require "../../../api/Actions/Trial.php";
         $trial      = new Trial($this->logger, $this->studentsPath, $this->studentEppn);
         $trials     = $trial->getSubmittedTrialAmounts();
         $trials     = $trials["data"];
@@ -169,7 +169,7 @@ class Student
      */
     private function __getActualPatientResults($patientId)
     {
-        $data = file_get_contents("../../json/data.json");
+        $data = file_get_contents("../../../json/data.json");
         if (!$data) {
             return "Unable to get actual patient results";
         }
@@ -189,7 +189,7 @@ class Student
      */
     private function __calculateTrialResults($patientId, $attemptData)
     {
-        $data = file_get_contents("../../json/data.json");
+        $data = file_get_contents("../../../json/data.json");
         if (!$data) {
             return "Unable to calculate results";
         }

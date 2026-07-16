@@ -11,10 +11,10 @@ header("Access-Control-Allow-Origin: *");
 // Necessary b/c of server PHP config
 date_default_timezone_set("America/New_York");
 
-require "../vendor/autoload.php";
-require "../Common/Parameters.php";
-require "../Common/APIResponse.php";
-require "../Common/Utils.php";
+require "../../../api/vendor/autoload.php";
+require "../../../api/Common/Parameters.php";
+require "../../../api/Common/APIResponse.php";
+require "../../../api/Common/Utils.php";
 use Psr\Http\Message\ServerRequestInterface;
 	use PhpOffice\PhpSpreadsheet\Spreadsheet;
 	use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -24,12 +24,12 @@ $parameters  = new Parameters;
 $responseFmt = new APIResponse;
 
 // Define String Constants
-$PATH_PATIENTS              = "../../data/patients/";
-$PATH_STUDENTS              = "../../data/students/";
-$PATH_METADATA              = "../../data/metadata/";
-$PATH_EXCLDATA              = "../../data/excel_dumps/students/";
-$PATH_EXCLDATA_STUDENT_META = "../../data/excel_dumps/students_metadata/";
-$PATH_EXCLDATA_PATIENTS     = "../../data/excel_dumps/patients/";
+$PATH_PATIENTS              = "../../../data/patients/";
+$PATH_STUDENTS              = "../../../data/students/";
+$PATH_METADATA              = "../../../data/metadata/";
+$PATH_EXCLDATA              = "../../../data/excel_dumps/students/";
+$PATH_EXCLDATA_STUDENT_META = "../../../data/excel_dumps/students_metadata/";
+$PATH_EXCLDATA_PATIENTS     = "../../../data/excel_dumps/patients/";
 
 // Rereference Shibboleth Globals used
 // Provides a bit of code-space away from Shibboleth,
@@ -75,7 +75,7 @@ $app = new \Slim\App($c);
 $container = $app->getContainer();
 $container["log"]= function () {
     $log = new \Monolog\Logger("Reconciliation");
-    $log->pushHandler(new \Monolog\Handler\StreamHandler("../../data/logs/app.log", \Monolog\Logger::DEBUG));
+    $log->pushHandler(new \Monolog\Handler\StreamHandler("../../../data/logs/app.log", \Monolog\Logger::DEBUG));
     return new \Monolog\Logger("Reconciliation");
 };
 
@@ -84,8 +84,8 @@ $container["log"]= function () {
  */
 
 $container['view'] = function ($container) {
-    $view = new \Slim\Views\Twig('../templates', [
-        'cache' => realpath("../templates/cache")
+    $view = new \Slim\Views\Twig('../../../api/templates', [
+        'cache' => realpath("../../../api/templates/cache")
     ]);
 
     // Instantiate and add Slim specific extension
@@ -101,7 +101,7 @@ $container['view'] = function ($container) {
 //$app->view(new \Slim\Views\Twig());
 $app->view->parserOptions = array(
     "charset"          => "utf-8",
-    "cache"            => realpath("../templates/cache"),
+    "cache"            => realpath("../../../api/templates/cache"),
     "auto_reload"      => true,
     "strict_variables" => false,
     "autoescape"       => true,
@@ -121,7 +121,7 @@ $app->get("/", function () use ($app) {
  * General init script to check if students results directory exists & make it if it doesn't
  */
 $app->get("/student_init", function () use ($app, $PATH_STUDENTS, $PATH_PATIENTS, $responseFmt, $authUniqueId, $authFirstName, $authLastName, $authAdmins) {
-    require "../Actions/Student.php";
+    require "../../../api/Actions/Student.php";
     $users = new Student($app->getContainer('log'), $PATH_STUDENTS, $PATH_PATIENTS, $authUniqueId);
 
     echo $responseFmt->arrayToAPIObject(
@@ -135,7 +135,7 @@ $app->get("/student_init", function () use ($app, $PATH_STUDENTS, $PATH_PATIENTS
 
 
 $app->get("/codeName", function () use ($app, $PATH_STUDENTS, $PATH_PATIENTS, $responseFmt, $authUniqueId, $authFirstName, $authLastName, $authAdmins) {
-    require "../Actions/Student.php";
+    require "../../../api/Actions/Student.php";
     $users = new Student($app->getContainer('log'), $PATH_STUDENTS, $PATH_PATIENTS, $authUniqueId);
 
     echo $responseFmt->arrayToAPIObject( array(
@@ -148,7 +148,7 @@ $app->get("/codeName", function () use ($app, $PATH_STUDENTS, $PATH_PATIENTS, $r
  * Get the trial numbers for each patient this student submitted answers for
  */
 $app->get("/submitted_trials_data", function () use ($app, $PATH_STUDENTS, $responseFmt, $authUniqueId) {
-    require "../Actions/Trial.php";
+    require "../../../api/Actions/Trial.php";
     $trial = new Trial($app->getContainer('log'), $PATH_STUDENTS, $authUniqueId);
 
     echo $responseFmt->arrayToAPIObject(
@@ -160,7 +160,7 @@ $app->get("/submitted_trials_data", function () use ($app, $PATH_STUDENTS, $resp
  * Get the trial numbers for each patient this student submitted answers for
  */
 $app->get("/student_report", function () use ($app, $PATH_STUDENTS, $responseFmt, $authUniqueId) {
-    require "../Actions/Trial.php";
+    require "../../../api/Actions/Trial.php";
     $trial = new Trial($app->getContainer('log'), $PATH_STUDENTS, $authUniqueId);
 
     echo $responseFmt->arrayToAPIObject(
@@ -178,7 +178,7 @@ $app->get("/student_report", function () use ($app, $PATH_STUDENTS, $responseFmt
 $app->get("/app_data/{type}", function ($response,$request,$args) use ($app) {
 //print_r($args); 
    //app->getContainer('log')->info("Using depreciated endpoint /all_patients_data");
-    $data = json_encode(json_decode(file_get_contents("../../json/data.json"))->{$args['type']});
+    $data = json_encode(json_decode(file_get_contents("../../../json/data.json"))->{$args['type']});
     echo <<<EOL
        {"status":"ok", "data":$data}
 EOL;
@@ -186,7 +186,7 @@ EOL;
 
 $app->get("/all_patients_data", function () use ($app) {
     $app->getContainer('log')->info("Using depreciated endpoint /all_patients_data");
-    $data = json_encode(json_decode(file_get_contents("../../json/data.json"))->patients);
+    $data = json_encode(json_decode(file_get_contents("../../../json/data.json"))->patients);
     echo <<<EOL
 	{"status":"ok", "data":$data}
 EOL;
@@ -201,7 +201,7 @@ $app->post("/submit_attempt", function ($request) use ($app, $PATH_STUDENTS, $PA
         "attempt", "patient",
     ));
 
-    require "../Actions/Student.php";
+    require "../../../api/Actions/Student.php";
     $student = new Student($app->getContainer('log'), $PATH_STUDENTS, $PATH_PATIENTS, $authUniqueId);
 
     echo $responseFmt->arrayToAPIObject(
@@ -238,7 +238,7 @@ function generateMaster ($request,$app, $PATH_STUDENTS, $PATH_EXCLDATA, $paramet
      * else, json return the doc dl link
      */
 
-    require "../Actions/Reporting.php";
+    require "../../../api/Actions/Reporting.php";
     $reporting = new Reporting($app->getContainer('log'), $PATH_STUDENTS, $authUniqueId);
 
     if ($param["download"] == "true") {
@@ -335,7 +335,7 @@ $app->get("/all_patient_report_xl", function () use ($app, $PATH_STUDENTS, $PATH
         exit;
     }
 
-    require "../Actions/Trial.php";
+    require "../../../api/Actions/Trial.php";
     $trial = new Trial($app->getContainer('log'), $PATH_STUDENTS, $authUniqueId);
 
     $allPatients = $trial->getAllPatients($PATH_PATIENTS);
